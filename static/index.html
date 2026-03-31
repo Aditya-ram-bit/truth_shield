@@ -1,0 +1,622 @@
+<!-- static/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truth Shield - AI Content Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        
+        .upload-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .content-type-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .type-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+        
+        .type-btn:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .type-btn.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            color: #aaa;
+        }
+        
+        .upload-text strong {
+            color: #00d4ff;
+        }
+        
+        #file-input, #text-input {
+            display: none;
+        }
+        
+        .text-input-area {
+            display: none;
+        }
+        
+        .text-input-area.active {
+            display: block;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            color: #fff;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+            margin-top: 1.5rem;
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-section.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .score-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            border: 8px solid;
+            transition: all 0.5s;
+        }
+        
+        .score-circle.real {
+            border-color: #22c55e;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+        }
+        
+        .score-circle.ai {
+            border-color: #ef4444;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+        }
+        
+        .score-circle.mixed {
+            border-color: #f59e0b;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+        }
+        
+        .score-value {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+        
+        .score-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        .verdict {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .confidence {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .indicators-list {
+            list-style: none;
+            margin-top: 1.5rem;
+        }
+        
+        .indicators-list li {
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .indicator-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f59e0b;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .file-preview {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .file-preview.show {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .file-preview img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .file-size {
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        .remove-file {
+            background: rgba(239, 68, 68, 0.2);
+            border: none;
+            color: #ef4444;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #666;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🛡️</div>
+            <h1>Truth Shield</h1>
+            <p class="subtitle">Detect AI-Generated Content with Advanced Analysis</p>
+        </header>
+        
+        <div class="upload-section">
+            <div class="content-type-selector">
+                <button class="type-btn active" data-type="image">
+                    🖼️ Image
+                </button>
+                <button class="type-btn" data-type="video">
+                    🎬 Video
+                </button>
+                <button class="type-btn" data-type="text">
+                    📝 Text
+                </button>
+            </div>
+            
+            <!-- File Upload Area -->
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">
+                    <strong>Click to upload</strong> or drag and drop<br>
+                    PNG, JPG, MP4, AVI, MOV
+                </p>
+                <input type="file" id="file-input" accept="image/*,video/*">
+            </div>
+            
+            <!-- File Preview -->
+            <div class="file-preview" id="file-preview">
+                <img id="preview-img" src="" alt="Preview">
+                <div class="file-info">
+                    <div class="file-name" id="file-name">filename.jpg</div>
+                    <div class="file-size" id="file-size">0 KB</div>
+                </div>
+                <button class="remove-file" id="remove-file">✕</button>
+            </div>
+            
+            <!-- Text Input Area -->
+            <div class="text-input-area" id="text-input-area">
+                <textarea id="text-input" placeholder="Paste or type your text here for analysis..."></textarea>
+            </div>
+            
+            <button class="analyze-btn" id="analyze-btn" disabled>
+                Analyze Content
+            </button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing content...</p>
+            <p style="color: #666; font-size: 0.9rem;">This may take a few moments</p>
+        </div>
+        
+        <div class="result-section" id="result-section">
+            <div class="score-display">
+                <div class="score-circle" id="score-circle">
+                    <span class="score-value" id="score-value">0.0</span>
+                    <span class="score-label">/ 10</span>
+                </div>
+                <div class="verdict" id="verdict">Analyzing...</div>
+                <div class="confidence" id="confidence">Confidence: --</div>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem;">Analysis Indicators:</h3>
+            <ul class="indicators-list" id="indicators-list">
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Truth Shield v1.0 | Detection scores are estimates and should be verified</p>
+        </div>
+    </div>
+    
+    <script>
+        // State
+        let currentType = 'image';
+        let selectedFile = null;
+        let selectedText = '';
+        
+        // Elements
+        const typeBtns = document.querySelectorAll('.type-btn');
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const filePreview = document.getElementById('file-preview');
+        const previewImg = document.getElementById('preview-img');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const removeFileBtn = document.getElementById('remove-file');
+        const textInputArea = document.getElementById('text-input-area');
+        const textInput = document.getElementById('text-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('result-section');
+        
+        // Type selector
+        typeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentType = btn.dataset.type;
+                
+                // Show/hide appropriate input
+                if (currentType === 'text') {
+                    uploadArea.style.display = 'none';
+                    filePreview.classList.remove('show');
+                    textInputArea.classList.add('active');
+                } else {
+                    uploadArea.style.display = 'block';
+                    textInputArea.classList.remove('active');
+                    fileInput.accept = currentType === 'video' 
+                        ? 'video/*' 
+                        : 'image/*';
+                }
+                
+                validateInput();
+            });
+        });
+        
+        // File upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            // Show preview
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.src = '';
+                previewImg.style.background = '#333';
+                previewImg.style.display = 'block';
+                previewImg.textContent = '🎬';
+            }
+            
+            filePreview.classList.add('show');
+            validateInput();
+        }
+        
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.remove('show');
+            validateInput();
+        });
+        
+        // Text input
+        textInput.addEventListener('input', (e) => {
+            selectedText = e.target.value;
+            validateInput();
+        });
+        
+        function validateInput() {
+            if (currentType === 'text') {
+                analyzeBtn.disabled = selectedText.length < 10;
+            } else {
+                analyzeBtn.disabled = !selectedFile;
+            }
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        // Analyze
+        analyzeBtn.addEventListener('click', async () => {
+            loading.classList.add('show');
+            resultSection.classList.remove('show');
+            analyzeBtn.disabled = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('content_type', currentType);
+                
+                if (currentType === 'text') {
+                    formData.append('text', selectedText);
+                } else {
+                    formData.append('file', selectedFile);
+                }
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                displayResult(result);
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+                analyzeBtn.disabled = false;
+            }
+        });
+        
+        function displayResult(result) {
+            const score = result.score;
+            const scoreValue = document.getElementById('score-value');
+            const scoreCircle = document.getElementById('score-circle');
+            const verdict = document.getElementById('verdict');
+            const confidence = document.getElementById('confidence');
+            const indicatorsList = document.getElementById('indicators-list');
+            
+            // Update score
+            scoreValue.textContent = score.toFixed(1);
+            
+            // Update circle color
+            scoreCircle.classList.remove('real', 'ai', 'mixed');
+            if (score < 4) {
+                scoreCircle.classList.add('real');
+            } else if (score > 6) {
+                scoreCircle.classList.add('ai');
+            } else {
+                scoreCircle.classList.add('mixed');
+            }
+            
+            // Verdict
+            verdict.textContent = result.verdict;
+            verdict.style.color = score < 4 ? '#22c55e' : score > 6 ? '#ef4444' : '#f59e0b';
+            
+            // Confidence
+            confidence.textContent = `Confidence: ${result.confidence || 'Medium'}`;
+            
+            // Indicators
+            indicatorsList.innerHTML = '';
+            if (result.indicators) {
+                result.indicators.forEach(indicator => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="indicator-icon"></span>${indicator}`;
+                    indicatorsList.appendChild(li);
+                });
+            }
+            
+            // Show result
+            resultSection.classList.add('show');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
